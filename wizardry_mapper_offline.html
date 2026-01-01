@@ -1,0 +1,413 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+<style>
+#div-container {
+    position: relative; /* Establishes a positioning context for absolute children */
+    top:      0;
+    left:     0;
+    width:    630px;
+    height:   630px;
+    border:   1px solid yellow;
+}
+
+#myCanvas {
+    display:  block;              /* Helps with layout consistency */
+    position: absolute;           /* Positioned relative to the container, sits underneath */
+    top:      0;
+    left:     0;
+    border:   1px solid #000000;
+    z-index:  10;                 /* Ensures the canvas has a specific stack order */
+}
+
+#printbuttonID {
+    position: absolute;  /* Positioned relative to the container's top-left corner */
+    top:      0px;       /* Example position (Y coordinate) */
+    left:     650px;     /* Example position (X coordinate) */
+    z-index:  10;        /* Ensures the widget appears above the canvas */
+}
+
+#loadbuttonID {
+    position: absolute;  /* Positioned relative to the container's top-left corner */
+    top:      30px;      /* Example position (Y coordinate) */
+    left:     650px;     /* Example position (X coordinate) */
+    z-index:  10;        /* Ensures the widget appears above the canvas */
+}
+
+#textareaID {
+    position: absolute;  /* Positioned relative to the container's top-left corner */
+    top:      60px;      /* Example position (Y coordinate) */
+    left:     650px;     /* Example position (X coordinate) */
+}
+
+</style>
+</head>
+<body>
+<div id="div-container">
+<canvas width="630" height="630" id="myCanvas">Your browser does not support the HTML canvas tag.</canvas>
+<input type="button"        id="printbuttonID" onclick="PrintToTextarea()"  value="PRINT TO TEXTAREA">
+<input type="button"        id="loadbuttonID"  onclick="LoadFromTextarea()" value="LOAD FROM TEXTAREA">
+<textarea id="textareaID" name="textareaNAME" rows="20" cols="64"></textarea>
+</div>
+<script>
+var map_vertical = new Map();
+var map_horizontal = new Map();
+var ctx = null;
+
+function LoadLines_Vertical_Paint(vert_xx, vert_yy, value) {
+     var start_yy = (19 - vert_yy)*30;
+
+     if (value === "WALL") {
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         console.log("LoadLines_Vertical_Paint: WALL vert_xx=" + vert_xx + ", start_xx=" + start_xx + ", start_yy=" + start_yy);
+
+         ctx.fillStyle = "#000000";
+         ctx.fillRect(start_xx, start_yy, 5, 30);
+     }
+     else if (value === "DOOR") {
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         ctx.fillStyle = "#00FF00";
+         ctx.fillRect(start_xx, start_yy, 5, 30);
+     }
+     else if (value === "CHECKED") {
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         ctx.fillStyle = "#0000FF";
+         ctx.fillRect(start_xx, start_yy, 5, 30);
+     }
+     else if (value === "SECRET") {
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         ctx.fillStyle = "#FF0000";
+         ctx.fillRect(start_xx, start_yy, 5, 30);
+     }
+     /*********************
+     else { //AIR
+         //erase whatever is there 
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         ctx.clearRect(start_xx, start_yy, 5, 30);
+
+         //vertical 1px black line
+         start_xx = (vert_xx + 1) * 30;
+         ctx.moveTo(start_xx, start_yy);
+         ctx.lineTo(start_xx, start_yy + 30);
+         ctx.strokeStyle = "#808080";
+         ctx.stroke();
+     }
+     *************************/
+}//LoadLines_Vertical_Paint
+
+function handle_vertical_line(vert_xx, vert_yy) {
+     var key = vert_xx + "," + vert_yy;
+     var value = map_vertical.get(key);
+     var start_yy = (19 - vert_yy)*30;
+
+     //console.log("handle_vertical_line: value==" + value + " vert_xx==" + vert_xx + " vert_yy==" + vert_yy);
+
+     if (value === "AIR") {
+         map_vertical.set(vert_xx + "," + vert_yy, "WALL");
+
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         ctx.fillStyle = "#000000";
+         ctx.fillRect(start_xx, start_yy, 5, 30);
+     }
+     else if (value === "WALL") {
+         map_vertical.set(vert_xx + "," + vert_yy, "DOOR");
+
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         ctx.fillStyle = "#00FF00";
+         ctx.fillRect(start_xx, start_yy, 5, 30);
+     }
+     else if (value === "DOOR") {
+         map_vertical.set(vert_xx + "," + vert_yy, "CHECKED");
+
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         ctx.fillStyle = "#0000FF";
+         ctx.fillRect(start_xx, start_yy, 5, 30);
+     }
+     else if (value === "CHECKED") {
+         map_vertical.set(vert_xx + "," + vert_yy, "SECRET");
+
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         ctx.fillStyle = "#FF0000";
+         ctx.fillRect(start_xx, start_yy, 5, 30);
+     }
+     else {
+         map_vertical.set(vert_xx + "," + vert_yy, "AIR");
+
+         //erase whatever is there 
+         var start_xx = ((vert_xx + 1) * 30) - 2;
+         ctx.clearRect(start_xx, start_yy, 5, 30);
+
+         //vertical 1px black line
+         start_xx = (vert_xx + 1) * 30;
+         ctx.moveTo(start_xx, start_yy);
+         ctx.lineTo(start_xx, start_yy + 30);
+         ctx.strokeStyle = "#808080";
+         ctx.stroke();
+     }
+}//handle_vertical_line
+
+function LoadLines_Horizontal_Paint(horiz_xx, horiz_yy, value) {
+     var start_xx = (horiz_xx + 1)*30;
+     if (value === "WALL") {
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.fillStyle = "#000000";
+         ctx.fillRect(start_xx, start_yy, 30, 5);
+     }
+     else if (value === "DOOR") {
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.fillStyle = "#00FF00";
+         ctx.fillRect(start_xx, start_yy, 30, 5);
+     }
+     else if (value === "CHECKED") {
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.fillStyle = "#0000FF";
+         ctx.fillRect(start_xx, start_yy, 30, 5);
+     }
+     else if (value === "SECRET") {
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.fillStyle = "#FF0000";
+         ctx.fillRect(start_xx, start_yy, 30, 5);
+     }
+     /*************************************************
+     else { //AIR
+         //erase whatever is there
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.clearRect(start_xx, start_yy, 30, 5);
+
+         //horizontal line
+         start_yy = (20 - horiz_yy) * 30;
+         ctx.moveTo(start_xx, start_yy);
+         ctx.lineTo(start_xx + 30, start_yy);
+         ctx.strokeStyle = "#808080";
+         ctx.stroke();
+     }
+     *******************************************************/
+}//LoadLines_Horizontal_Paint
+
+function handle_horizontal_line(horiz_xx, horiz_yy) {
+     var key = horiz_xx + "," + horiz_yy;
+     var value = map_horizontal.get(key);
+     var start_xx = (horiz_xx + 1)*30;
+
+     console.log("handle_horizontal_line: value==" + value + " horiz_xx==" + horiz_xx + " horiz_yy==" + horiz_yy);
+
+     if (value === "AIR") {
+         map_horizontal.set(key, "WALL");
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.fillStyle = "#000000";
+         ctx.fillRect(start_xx, start_yy, 30, 5);
+     }
+     else if (value === "WALL") {
+         map_horizontal.set(key, "DOOR");
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.fillStyle = "#00FF00";
+         ctx.fillRect(start_xx, start_yy, 30, 5);
+     }
+     else if (value === "DOOR") {
+         map_horizontal.set(key, "CHECKED");
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.fillStyle = "#0000FF";
+         ctx.fillRect(start_xx, start_yy, 30, 5);
+     }
+     else if (value === "CHECKED") {
+         map_horizontal.set(key, "SECRET");
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.fillStyle = "#FF0000";
+         ctx.fillRect(start_xx, start_yy, 30, 5);
+     }
+     else {
+         map_horizontal.set(key, "AIR");
+
+         //erase whatever is there
+         var start_yy = ((20 - horiz_yy) * 30) - 2;
+         ctx.clearRect(start_xx, start_yy, 30, 5);
+
+         //horizontal line
+         start_yy = (20 - horiz_yy) * 30;
+         ctx.moveTo(start_xx, start_yy);
+         ctx.lineTo(start_xx + 30, start_yy);
+         ctx.strokeStyle = "#808080";
+         ctx.stroke();
+     }
+}//handle_horizontal_line
+
+// Define the function to run when the event occurs
+function handleClick() {
+     //offsetX and offsetY (relative to the top-left corner of the canvas)
+     const xx = event.offsetX;
+     const yy = event.offsetY;
+
+     var vert_xx;
+     var vert_yy;
+     var horiz_xx;
+     var horiz_yy;
+
+     if (xx >= 29 && yy >= 0 && yy <= 600)
+     {
+          var vert_test = xx % 30;
+          var horiz_test = yy % 30;
+          if (vert_test==29 || vert_test<=1) //vertical line click test
+          {
+               vert_yy = yy / 30;
+               vert_yy = 19 - vert_yy;
+               vert_yy = Math.floor(vert_yy);
+               vert_yy++;
+
+               if (vert_test==29)
+                    vert_xx = xx + 1;
+               else
+                    vert_xx = xx;
+               vert_xx = vert_xx / 30;
+               vert_xx--;
+               vert_xx = Math.floor(vert_xx);
+
+               handle_vertical_line(vert_xx, vert_yy);
+          }
+          else if (horiz_test==29 || horiz_test<=1) //horizontal line click test
+          {
+               horiz_xx = xx / 30;
+               horiz_xx = Math.floor(horiz_xx);
+               horiz_xx--;
+
+               if (horiz_test==29)
+                    horiz_yy = yy+1;
+               else
+                    horiz_yy = yy;
+               horiz_yy = horiz_yy / 30;
+               horiz_yy = 20 - Math.floor(horiz_yy);
+               console.log("xx==" + xx + " yy==" + yy);
+               handle_horizontal_line(horiz_xx, horiz_yy);
+          }
+     }
+}//handleClick
+
+function OfflineInitialize() {
+     var ii;
+     var xx;
+     var yy;
+     var temp;
+     var num;
+
+     ctx = document.getElementById("myCanvas").getContext("2d");
+     document.getElementById("myCanvas").addEventListener('click', handleClick);
+
+     for (ii=1; ii <= 20; ii++)
+     {
+          temp = 30 * ii;
+     
+          //vertical line
+          ctx.moveTo(temp, 0);
+          ctx.lineTo(temp, 630);
+          ctx.strokeStyle = "#808080";
+          ctx.stroke();
+     
+          //horizontal line
+          ctx.moveTo(0, temp);
+          ctx.lineTo(630, temp);
+          ctx.strokeStyle = "#808080";
+          ctx.stroke();
+     }
+     
+     ctx.font = "26px Arial";
+     for (num=0; num <= 19; num++)
+     {
+          // Y-axis numbers
+          yy = (30 * num) + 26;
+          ctx.fillText(19 - num, 0, yy);
+     
+          // X-axis numbers
+          xx = (30 * num) + 30;
+          ctx.fillText(num, xx, 626);
+     }
+     
+     // Set map_horizontal
+     var horiz_xx;
+     var horiz_yy;
+     for (horiz_xx = 0; horiz_xx <= 19; horiz_xx++)
+     {
+         for (horiz_yy = 0; horiz_yy <= 20; horiz_yy++)
+             map_horizontal.set(horiz_xx + "," + horiz_yy, "AIR");
+     }
+     
+     // Set map_vertical
+     var vert_xx;
+     var vert_yy;
+     for (vert_xx = 0; vert_xx <= 20; vert_xx++)
+     {
+         for (vert_yy = 0; vert_yy <= 19; vert_yy++)
+             map_vertical.set(vert_xx + "," + vert_yy, "AIR"); 
+     }
+}//OfflineInitialize
+
+
+function LoadFromTextarea() {
+
+        try {
+		var myLines    = document.getElementById('textareaID').value.trim().split('\n');
+
+                //assume ii=0 is header line
+                for (var ii=1; ii < myLines.length; ii++) 
+                {
+                     var trimstr = myLines[ii].trim();
+                     if (trimstr.length > 0)
+                     {
+                           var temp = trimstr.split(',');
+                           var vert_or_horiz = temp[0];
+                           var xx = temp[1];
+                           var yy = temp[2];
+                           var line_type = temp[3];
+
+			   if (vert_or_horiz === "VERTICAL")
+                           {
+                               map_vertical.set(xx + "," + yy, line_type);
+                               LoadLines_Vertical_Paint(parseInt(xx,10), parseInt(yy,10), line_type);
+                           }
+			   else
+                           {
+                               map_horizontal.set(xx + "," + yy, line_type);
+                               LoadLines_Horizontal_Paint(parseInt(xx,10), parseInt(yy,10), line_type);
+                           }
+                     }
+                }//for
+        }//try
+        catch (err) {
+                var errstr = "LoadFromTextarea ERROR = " + err;
+                document.getElementById('textareaID').value = errstr;
+        }
+}//LoadFromTextarea
+
+
+function PrintToTextarea() {
+
+               document.getElementById('textareaID').value = "";
+               var bigstr = "";
+               bigstr += "VERTICAL-OR-HORIZONTAL,XX,YY,TYPE\n";
+               for (const key of map_vertical.keys()) {
+                            var value = map_vertical.get(key);
+                            var coords = key.split(",");
+                            var xx = coords[0];
+                            var yy = coords[1];
+                            bigstr += "VERTICAL," + xx + "," + yy + "," + value + "\n";
+               }
+               for (const key of map_horizontal.keys()) {
+                            var value = map_horizontal.get(key);
+                            var coords = key.split(",");
+                            var xx = coords[0];
+                            var yy = coords[1];
+                            bigstr += "HORIZONTAL," + xx + "," + yy + "," + value + "\n";
+               }
+               document.getElementById('textareaID').value = bigstr;
+
+}//PrintToTextarea
+
+
+OfflineInitialize();
+
+</script>
+</body>
+</html>
