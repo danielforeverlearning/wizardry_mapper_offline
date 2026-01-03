@@ -25,7 +25,7 @@
     z-index:  10;                 /* Ensures the canvas has a specific stack order */
 }
 
-#printbuttonID {
+#savebuttonID {
     position: absolute;  /* Positioned relative to the container's top-left corner */
     top:      0px;       /* Example position (Y coordinate) */
     left:     650px;     /* Example position (X coordinate) */
@@ -43,28 +43,40 @@
     position: absolute;  /* Positioned relative to the container's top-left corner */
     top:      60px;      /* Example position (Y coordinate) */
     left:     650px;     /* Example position (X coordinate) */
+    z-index:  10;        /* Ensures the widget appears above the canvas */
 }
 
+#redrawfromtextareabuttonID {
+    position: absolute;  /* Positioned relative to the container's top-left corner */
+    top:      375px;      /* Example position (Y coordinate) */
+    left:     650px;     /* Example position (X coordinate) */
+    z-index:  10;        /* Ensures the widget appears above the canvas */
+}
 </style>
 </head>
 <body>
 <div id="div-container">
 <canvas width="630" height="630" id="myCanvas">Your browser does not support the HTML canvas tag.</canvas>
-<input type="button"        id="printbuttonID" onclick="PrintToTextarea()"  value="PRINT TO TEXTAREA">
-<input type="button"        id="loadbuttonID"  onclick="LoadFromTextarea()" value="LOAD FROM TEXTAREA">
-<textarea id="textareaID" name="textareaNAME" rows="20" cols="64"></textarea>
+<input type="button"        id="savebuttonID"  onclick="SaveToTextFile();"  value="SAVE TO TEXT FILE">
+<input type="button"        id="loadbuttonID"  onclick="document.getElementById('fileInputID').click();"  value="LOAD FROM TEXT FILE">
+<input hidden type="file"          id="fileInputID"  accept=".txt">
+<input hidden type="button" id="redrawfromtextareabuttonID"  onclick="RedrawMapsFromTextarea()"  value="REDRAW MAPS FROM TEXTAREA">
+<textarea hidden            id="textareaID" name="textareaNAME" rows="20" cols="64"></textarea>
+<input hidden type="button" id="printbuttonID" onclick="PrintToTextarea()"  value="PRINT TO TEXTAREA">
 </div>
 <script>
 var map_vertical = new Map();
 var map_horizontal = new Map();
-var ctx = null;
 
 function LoadLines_Vertical_Paint(vert_xx, vert_yy, value) {
+     const canvas = document.getElementById('myCanvas');
+     const ctx = canvas.getContext('2d');
+
      var start_yy = (19 - vert_yy)*30;
 
      if (value === "WALL") {
          var start_xx = ((vert_xx + 1) * 30) - 2;
-         console.log("LoadLines_Vertical_Paint: WALL vert_xx=" + vert_xx + ", start_xx=" + start_xx + ", start_yy=" + start_yy);
+         //console.log("LoadLines_Vertical_Paint: WALL vert_xx=" + vert_xx + ", start_xx=" + start_xx + ", start_yy=" + start_yy);
 
          ctx.fillStyle = "#000000";
          ctx.fillRect(start_xx, start_yy, 5, 30);
@@ -101,6 +113,10 @@ function LoadLines_Vertical_Paint(vert_xx, vert_yy, value) {
 }//LoadLines_Vertical_Paint
 
 function handle_vertical_line(vert_xx, vert_yy) {
+
+     const canvas = document.getElementById('myCanvas');
+     const ctx = canvas.getContext('2d');
+
      var key = vert_xx + "," + vert_yy;
      var value = map_vertical.get(key);
      var start_yy = (19 - vert_yy)*30;
@@ -152,6 +168,10 @@ function handle_vertical_line(vert_xx, vert_yy) {
 }//handle_vertical_line
 
 function LoadLines_Horizontal_Paint(horiz_xx, horiz_yy, value) {
+
+     const canvas = document.getElementById('myCanvas');
+     const ctx = canvas.getContext('2d');
+
      var start_xx = (horiz_xx + 1)*30;
      if (value === "WALL") {
          var start_yy = ((20 - horiz_yy) * 30) - 2;
@@ -190,11 +210,15 @@ function LoadLines_Horizontal_Paint(horiz_xx, horiz_yy, value) {
 }//LoadLines_Horizontal_Paint
 
 function handle_horizontal_line(horiz_xx, horiz_yy) {
+
+     const canvas = document.getElementById('myCanvas');
+     const ctx = canvas.getContext('2d');
+
      var key = horiz_xx + "," + horiz_yy;
      var value = map_horizontal.get(key);
      var start_xx = (horiz_xx + 1)*30;
 
-     console.log("handle_horizontal_line: value==" + value + " horiz_xx==" + horiz_xx + " horiz_yy==" + horiz_yy);
+     //console.log("handle_horizontal_line: value==" + value + " horiz_xx==" + horiz_xx + " horiz_yy==" + horiz_yy);
 
      if (value === "AIR") {
          map_horizontal.set(key, "WALL");
@@ -235,6 +259,7 @@ function handle_horizontal_line(horiz_xx, horiz_yy) {
          ctx.stroke();
      }
 }//handle_horizontal_line
+
 
 // Define the function to run when the event occurs
 function handleClick() {
@@ -280,21 +305,19 @@ function handleClick() {
                     horiz_yy = yy;
                horiz_yy = horiz_yy / 30;
                horiz_yy = 20 - Math.floor(horiz_yy);
-               console.log("xx==" + xx + " yy==" + yy);
+               //console.log("xx==" + xx + " yy==" + yy);
                handle_horizontal_line(horiz_xx, horiz_yy);
           }
      }
 }//handleClick
 
-function OfflineInitialize() {
-     var ii;
-     var xx;
-     var yy;
-     var temp;
-     var num;
+function DrawGrid() {
 
-     ctx = document.getElementById("myCanvas").getContext("2d");
-     document.getElementById("myCanvas").addEventListener('click', handleClick);
+     const canvas = document.getElementById('myCanvas');
+     const ctx = canvas.getContext('2d');
+
+     // Clear the entire canvas
+     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
      for (ii=1; ii <= 20; ii++)
      {
@@ -324,6 +347,41 @@ function OfflineInitialize() {
           xx = (30 * num) + 30;
           ctx.fillText(num, xx, 626);
      }
+}//DrawGrid
+
+function OfflineInitialize() {
+     var ii;
+     var xx;
+     var yy;
+     var temp;
+     var num;
+
+     document.getElementById("myCanvas").addEventListener('click', handleClick);
+
+     document.getElementById('fileInputID').addEventListener('change', (event) => {
+  				const file = event.target.files[0];
+  				if (!file) {
+    					alert("fileInputID: Could not get file object!");
+					return;
+  				}
+
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					const fileContent = e.target.result;
+					document.getElementById('textareaID').value = fileContent;
+    					alert("fileInputID: File loaded successfully:", fileContent);
+					document.getElementById('redrawfromtextareabuttonID').click();
+				};
+
+				reader.onerror = (e) => {
+    					alert("fileInputID: Error reading file: ${e.target.error.name}");
+				};
+
+				// Read the file as plain text
+				reader.readAsText(file);
+     });
+
+     DrawGrid();
      
      // Set map_horizontal
      var horiz_xx;
@@ -345,9 +403,11 @@ function OfflineInitialize() {
 }//OfflineInitialize
 
 
-function LoadFromTextarea() {
+function RedrawMapsFromTextarea() {
 
         try {
+		DrawGrid();
+		
 		var myLines    = document.getElementById('textareaID').value.trim().split('\n');
 
                 //assume ii=0 is header line
@@ -379,31 +439,67 @@ function LoadFromTextarea() {
                 var errstr = "LoadFromTextarea ERROR = " + err;
                 document.getElementById('textareaID').value = errstr;
         }
-}//LoadFromTextarea
+}//RedrawMapsFromTextarea
 
 
-function PrintToTextarea() {
-
-               document.getElementById('textareaID').value = "";
-               var bigstr = "";
-               bigstr += "VERTICAL-OR-HORIZONTAL,XX,YY,TYPE\n";
-               for (const key of map_vertical.keys()) {
+function MapsToString() {
+	var bigstr = "";
+	bigstr += "VERTICAL-OR-HORIZONTAL,XX,YY,TYPE\n";
+	for (const key of map_vertical.keys()) {
                             var value = map_vertical.get(key);
                             var coords = key.split(",");
                             var xx = coords[0];
                             var yy = coords[1];
                             bigstr += "VERTICAL," + xx + "," + yy + "," + value + "\n";
-               }
-               for (const key of map_horizontal.keys()) {
+        }
+        for (const key of map_horizontal.keys()) {
                             var value = map_horizontal.get(key);
                             var coords = key.split(",");
                             var xx = coords[0];
                             var yy = coords[1];
                             bigstr += "HORIZONTAL," + xx + "," + yy + "," + value + "\n";
-               }
+	}
+	return bigstr;
+}//MapsToString();
+
+
+function PrintToTextarea() {
+
+               document.getElementById('textareaID').value = "";
+               var bigstr = MapsToString();
                document.getElementById('textareaID').value = bigstr;
 
 }//PrintToTextarea
+
+
+function SaveToTextFile() {
+
+	//This function creates an in-memory representation of your data as a Blob, 
+	//generates a temporary URL for it, and then forces a download when clicked.
+
+	// Create a Blob object with the file content and specified MIME type
+	var bigstr = MapsToString();
+	const blob = new Blob([bigstr], { type: 'text/plain;charset=utf-8' });
+
+	// Create a temporary anchor element
+    	const link = document.createElement('a');
+    
+	// Create a URL for the Blob object
+	link.href = URL.createObjectURL(blob);
+    
+	// Set the download attribute with the desired filename
+	link.download = "maps.txt";
+
+	// Append link to body (necessary for some browsers)
+	document.body.appendChild(link);
+
+	// Programmatically click the link to trigger the download
+	link.click();
+
+	// Clean up by removing the link and revoking the object URL
+	document.body.removeChild(link);
+	URL.revokeObjectURL(link.href);
+}//SaveToTextFile
 
 
 OfflineInitialize();
