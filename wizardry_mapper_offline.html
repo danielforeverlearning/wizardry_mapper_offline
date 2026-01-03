@@ -39,16 +39,9 @@
     z-index:  10;        /* Ensures the widget appears above the canvas */
 }
 
-#textareaID {
+#notesID {
     position: absolute;  /* Positioned relative to the container's top-left corner */
     top:      60px;      /* Example position (Y coordinate) */
-    left:     650px;     /* Example position (X coordinate) */
-    z-index:  10;        /* Ensures the widget appears above the canvas */
-}
-
-#redrawfromtextareabuttonID {
-    position: absolute;  /* Positioned relative to the container's top-left corner */
-    top:      375px;      /* Example position (Y coordinate) */
     left:     650px;     /* Example position (X coordinate) */
     z-index:  10;        /* Ensures the widget appears above the canvas */
 }
@@ -59,10 +52,11 @@
 <canvas width="630" height="630" id="myCanvas">Your browser does not support the HTML canvas tag.</canvas>
 <input type="button"        id="savebuttonID"  onclick="SaveToTextFile();"  value="SAVE TO TEXT FILE">
 <input type="button"        id="loadbuttonID"  onclick="document.getElementById('fileInputID').click();"  value="LOAD FROM TEXT FILE">
-<input hidden type="file"          id="fileInputID"  accept=".txt">
+<textarea                   id="notesID" rows="20" cols="64"></textarea>
+<input hidden type="file"   id="fileInputID"   accept=".txt">
 <input hidden type="button" id="redrawfromtextareabuttonID"  onclick="RedrawMapsFromTextarea()"  value="REDRAW MAPS FROM TEXTAREA">
-<textarea hidden            id="textareaID" name="textareaNAME" rows="20" cols="64"></textarea>
 <input hidden type="button" id="printbuttonID" onclick="PrintToTextarea()"  value="PRINT TO TEXTAREA">
+<textarea hidden            id="textareaID" rows="20" cols="64"></textarea>
 </div>
 <script>
 var map_vertical = new Map();
@@ -408,7 +402,9 @@ function RedrawMapsFromTextarea() {
         try {
 		DrawGrid();
 		
-		var myLines    = document.getElementById('textareaID').value.trim().split('\n');
+		var block = document.getElementById('textareaID').value.split("NOTES\n");
+                document.getElementById('notesID').value = block[1];
+                var myLines = block[0].trim().split('\n');
 
                 //assume ii=0 is header line
                 for (var ii=1; ii < myLines.length; ii++) 
@@ -479,6 +475,8 @@ function SaveToTextFile() {
 
 	// Create a Blob object with the file content and specified MIME type
 	var bigstr = MapsToString();
+        bigstr += "NOTES\n";
+        bigstr += document.getElementById('notesID').value;
 	const blob = new Blob([bigstr], { type: 'text/plain;charset=utf-8' });
 
 	// Create a temporary anchor element
