@@ -62,6 +62,29 @@
 var map_vertical = new Map();
 var map_horizontal = new Map();
 
+function DrawSpecialCharacters() {
+	const canvas = document.getElementById('myCanvas');
+	const ctx = canvas.getContext('2d');
+	ctx.font = "26px Arial";
+
+	var linearray = document.getElementById('notesID').value.split("\n");
+        for (var ii=0; ii < linearray.length; ii++)
+        {
+		var chunkarray = linearray[ii].split("=");
+		var dimensionarray = chunkarray[0].split(",");
+		var xx = parseInt(dimensionarray[0], 10);
+		var yy = parseInt(dimensionarray[1], 10);
+		var character = chunkarray[1];
+                var canvas_xx = ((xx+1)*30)+7;
+                var canvas_yy = ((19 - yy + 1)*30)-7;
+
+		console.log("xx=" + xx + " yy=" + yy + " character=" + character + " canvas_xx=" + canvas_xx + " canvas_yy=" + canvas_yy);
+
+		ctx.fillText(character, canvas_xx, canvas_yy);
+        }
+}//DrawSpecialCharacters
+
+
 function LoadLines_Vertical_Paint(vert_xx, vert_yy, value) {
      const canvas = document.getElementById('myCanvas');
      const ctx = canvas.getContext('2d');
@@ -430,6 +453,9 @@ function RedrawMapsFromTextarea() {
                            }
                      }
                 }//for
+
+		DrawSpecialCharacters();
+
         }//try
         catch (err) {
                 var errstr = "LoadFromTextarea ERROR = " + err;
